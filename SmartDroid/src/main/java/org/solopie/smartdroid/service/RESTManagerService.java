@@ -21,7 +21,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.solopie.smartdroid.service.RESTManagerService.INTENT_BINDING.RESPONSE;
 
@@ -37,6 +39,7 @@ import static org.solopie.smartdroid.service.RESTManagerService.INTENT_BINDING.R
 public class RESTManagerService extends IntentService {
     private static String TAG = RESTManagerService.class.getCanonicalName();
     private final static Gson gson = new Gson();
+
 
     public RESTManagerService() {
         super(RESTManagerService.class.getSimpleName());
@@ -80,6 +83,7 @@ public class RESTManagerService extends IntentService {
         assert acceptType != null;
 
         Log.d(TAG, "Task handled" + task.name());
+        Bundle b = new Bundle();
         String url = ConstantConfig.BASE_URL.concat(endpoint);
 
         RestTemplate restTemplate = RestTemplateFactory.getInstance();
@@ -87,7 +91,6 @@ public class RESTManagerService extends IntentService {
         headers.setContentType(MediaType.parseMediaType(contentType));
         assert receiver != null;
 
-        Bundle b = new Bundle();
         b.putSerializable(INTENT_BINDING.TASK, task);
         receiver.send(HttpRequestStatus.IN_PROGRESS, b);
         try {

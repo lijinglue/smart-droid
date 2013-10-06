@@ -15,12 +15,15 @@ import com.google.gson.Gson;
 import org.solopie.smartdroid.component.WebserviceResultReceiver;
 import org.solopie.smartdroid.service.RESTManagerIntentFactory;
 import org.solopie.smartdroid.service.RESTManagerService;
+import org.solopie.smartdroid.types.ConstantConfig;
 import org.solopie.smartdroid.types.HttpRequestStatus;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class DashboardActivity extends Activity implements WebserviceResultReceiver.Receiver {
     private final static String TAG = DashboardActivity.class.getCanonicalName();
@@ -36,11 +39,27 @@ public class DashboardActivity extends Activity implements WebserviceResultRecei
         receiver.setReceiver(this);
 
         final View requestBtn = findViewById(R.id.dashbd_answer_request_btn);
-        final Intent restManagerIntent = RESTManagerIntentFactory.getInstance(RESTManagerIntentFactory.Task.QUERY, this, this.receiver);// new Intent(Intent.ACTION_SYNC, null, this, RESTManagerService.class);
+        final Intent restManagerIntent = RESTManagerIntentFactory.getInstance(RESTManagerIntentFactory.Task.QUERY, this, this.receiver);
         requestBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 startService(restManagerIntent);
+                requestBtn.setEnabled(false);
+                Timer timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if(!requestBtn.isEnabled()){
+                                    Toast.makeText(getApplicationContext(),getString(R.string.dashdb_toast_request_error_str),ConstantConfig.TOAST_DISPLAY_LONG);
+                                    requestBtn.setEnabled(true);
+                                }
+                            }
+                        });
+                    }
+                }, ConstantConfig.HTTP_CONNECTION_TIMEOUT*2); //Connection timeout + read steam timeout
             }
         });
     }
@@ -54,7 +73,6 @@ public class DashboardActivity extends Activity implements WebserviceResultRecei
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.dashboard, menu);
         return true;
     }
@@ -64,12 +82,14 @@ public class DashboardActivity extends Activity implements WebserviceResultRecei
         final RESTManagerIntentFactory.Task taskHandled = (RESTManagerIntentFactory.Task) resultData.getSerializable(RESTManagerService.INTENT_BINDING.TASK);
         Log.d(TAG,"Task handled:"+ taskHandled.name());
         final Context context = getApplicationContext();
+        final View requestBtn = findViewById(R.id.dashbd_answer_request_btn);
         switch (resultCode) {
             case HttpRequestStatus.IN_PROGRESS:
                 Log.d(TAG,"Request in progress msg notified main thread");
                 break;
             case HttpRequestStatus.ERROR:
                 Log.d(TAG,"Request error msg notified main thread");
+                requestBtn.setEnabled(true);
                 break;
             case HttpRequestStatus.SUCCESS:
                 Log.d(TAG,"Request Success, ui thread try updating ui");
@@ -98,7 +118,8 @@ public class DashboardActivity extends Activity implements WebserviceResultRecei
                                 DashboardActivity.this.runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        Toast.makeText(context, response, 3).show();
+                                        Toast.makeText(context, response, ConstantConfig.TOAST_DISPLAY_LONG).show();
+                                        requestBtn.setEnabled(true);
                                     }
                                 });
                             }

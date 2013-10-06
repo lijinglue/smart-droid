@@ -28,11 +28,9 @@ public class RestTemplateFactory {
 
         GsonHttpMessageConverter gsonHttpMessageConverter = new GsonHttpMessageConverter();
         gsonHttpMessageConverter.setGson(new Gson());
-        FormHttpMessageConverter formHttpMessageConverter = new FormHttpMessageConverter();
-        StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter();
         restTemplate.getMessageConverters().add(gsonHttpMessageConverter);
-        restTemplate.getMessageConverters().add(stringHttpMessageConverter);
-        restTemplate.getMessageConverters().add(formHttpMessageConverter);
+        restTemplate.getMessageConverters().add(new StringHttpMessageConverter());
+        restTemplate.getMessageConverters().add(new FormHttpMessageConverter());
         return restTemplate;
     }
 }
